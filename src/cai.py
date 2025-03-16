@@ -12,7 +12,7 @@ import nltk
 import string
 from nltk.tokenize import word_tokenize
 
-nltk.download("punkt")
+nltk.download("punkt_tab")
 torch.cuda.empty_cache()
 
 
