@@ -335,12 +335,12 @@ def run_test_cases(faiss_index, bm25, text_chunks, model):
             "expected": "Irrelevant, should return no relevant answers.",
         },
         "Quarterly Profit Check": {
-            "question": "What was the profit for Q1 2023?",
+            "question": "What was the stock opening price for Q1 2023?",
             "expected": """No direct profit data available,
             but you can check stock data for Q1 2023.""",
         },
         "Company Debt Query": {
-            "question": "What is the total debt for the company in Q2 2023?",
+            "question": "What is the stock closing price for the company in Q2 2023?",
             "expected": """ Debt information not explicitly available,
             but stock data for Q2.""",
         },
@@ -356,15 +356,17 @@ def run_test_cases(faiss_index, bm25, text_chunks, model):
 
     for test_name, test_case in test_questions.items():
         query = test_case["question"]
-
-        reranked_chunks = multi_stage_retrieve_and_rerank(
-            query, faiss_index, bm25, text_chunks, model, k=3
-        )
+        reranked_chunks, reranked_scores = multi_stage_retrieve_and_rerank(
+                query, faiss_index, bm25, text_chunks, model, k=3
+            )
 
         # Filter the results
         if reranked_chunks:
             filtered_answer = filter_output_answer(reranked_chunks[0], query, model)
             results.append((query, filtered_answer))
+            st.write(
+                    f"**Answer:** {filtered_answer}, confidence label: {reranked_scores[0]:.2f}"
+                )
         else:
             results.append((query, "No relevant answers found."))
 

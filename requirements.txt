@@ -1,9 +1,10 @@
 yfinance
 pandas
-numpy
+numpy==1.23.5
 sentence-transformers
-faiss-cpu
+faiss-cpu==1.7.4
 rank-bm25
 scikit-learn
 streamlit
 nltk
+torch==2.1.0
