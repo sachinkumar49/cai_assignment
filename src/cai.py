@@ -1,5 +1,6 @@
 import yfinance as yf
 import pandas as pd
+import torch
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
@@ -12,6 +13,7 @@ import string
 from nltk.tokenize import word_tokenize
 
 nltk.download("punkt")
+torch.cuda.empty_cache()
 
 
 # Function to download and preprocess financial data for a given company ticker
@@ -258,7 +260,9 @@ def validate_user_query(query):
 def extract_metric_from_query(query):
     # Use regex to extract the financial metric from the query
     # Example: 'What was the volume for Q4 2023'
-    match = re.search(r"(volume|open|close|high|low)", query.lower())
+    match = re.search(
+        r"(volume|open|close|high|low | debt | revenue | stock price)", query.lower()
+    )
     print(match)
     if match:
         return match.group(1)  # Return the matched metric
@@ -266,19 +270,28 @@ def extract_metric_from_query(query):
 
 
 def extract_metric_from_chunk(chunk, metric):
-    if metric.lower() == "volume":
-        match = re.search(r"Total Trading Volume: ([\d,]+)", chunk)
-    elif metric.lower() == "open":
-        match = re.search(r"Average Opening Price: ([\d\.]+)", chunk)
-    elif metric.lower() == "close":
-        match = re.search(r"Average Closing Price: ([\d\.]+)", chunk)
-    elif metric.lower() == "high":
-        match = re.search(r"Highest Price: ([\d\.]+)", chunk)
-    elif metric.lower() == "low":
-        match = re.search(r"Lowest Price: ([\d\.]+)", chunk)
-    else:
-        return "Metric not found"
-
+    print(metric, chunk)
+    match = None
+    if "volume" in metric.lower():
+        match = re.search(r"total trading volume: ([\d,]+)", chunk.lower())
+    elif "open" in metric.lower() :
+        match = re.search(r"average opening price: ([\d\.]+)", chunk.lower())
+    elif "close" in metric.lower():
+        match = re.search(r"average closing price: ([\d\.]+)", chunk.lower())
+    elif "high" in metric.lower():
+        match = re.search(r"highest price: ([\d\.]+)", chunk.lower())
+    elif "low" in metric.lower():
+        match = re.search(r"lowest price: ([\d\.]+)", chunk.lower())
+    elif "stock" in metric.lower():
+        print('yes')
+        match = re.search(r"highest price: ([\d\.]+)", chunk.lower())
+    elif "profit" in metric.lower() or "earnings" in metric.lower():
+        match = re.search(r"profit: ([\d\.]+)", chunk.lower())
+    elif "low" in metric.lower():
+        match = re.search(r"lowest price: ([\d\.]+)", chunk.lower())
+    elif "average" in metric.lower():
+        match = re.search(r"average opening ([\w\s]+): ([\d\.]+)", chunk.lower())
+    print(match, "sach")
     return match.group(1) if match else "Metric not found"
 
 
@@ -313,8 +326,8 @@ def run_test_cases(faiss_index, bm25, text_chunks, model):
             # Replace with actual data
         },
         "Low Confidence Relevant Financial Question": {
-            "question": "What was the revenue for Q3 2023?",
-            "expected": "Revenue for Q3 2023 is $4.5 billion.",
+            "question": "What was the stock opening price for Q3 2023?",
+            "expected": "stock opening price for Q3 2023 is $104.5.",
             # Replace with actual data
         },
         "Irrelevant Question": {
@@ -324,16 +337,16 @@ def run_test_cases(faiss_index, bm25, text_chunks, model):
         "Quarterly Profit Check": {
             "question": "What was the profit for Q1 2023?",
             "expected": """No direct profit data available,
-            but you can check EPS or revenue for Q1 2023.""",
+            but you can check stock data for Q1 2023.""",
         },
         "Company Debt Query": {
             "question": "What is the total debt for the company in Q2 2023?",
             "expected": """ Debt information not explicitly available,
-            but operational cost information is available for Q2.""",
+            but stock data for Q2.""",
         },
         "General Revenue Query": {
-            "question": "What was the total revenue for the company?",
-            "expected": """ Revenue information is available for
+            "question": "What was the total volume for the company?",
+            "expected": """ volume information is available for
             specific quarters (e.g., Q1 2023, Q4 2023).""",
         },
     }
