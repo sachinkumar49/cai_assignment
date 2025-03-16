@@ -1,9 +1,9 @@
-yfinance,
-pandas,
-numpy,
-sentence_transformers,
-faiss,
-rank_bm25,
-scikit-learn,
-streamlit,
+yfinance
+pandas
+numpy
+sentence-transformers
+faiss-cpu
+rank-bm25
+scikit-learn
+streamlit
 nltk
